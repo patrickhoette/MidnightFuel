@@ -2,58 +2,96 @@ package com.m2mobi.midnightfuel.neon
 
 import android.graphics.Paint
 import android.graphics.Typeface
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.size
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.NativePaint
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 import com.m2mobi.midnightfuel.theme.AccentColor
+import androidx.compose.ui.graphics.Paint as ComposePaint
 
 @Composable
-internal fun NeonText(
+fun NeonText(
     text: String,
     textSize: TextUnit,
     modifier: Modifier = Modifier,
     shadowRadius: Dp = DefaultShadowRadius,
-    onBaseline: ((Float) -> Unit)? = null,
 ) {
-    val paint = rememberPaint(shadowRadius = shadowRadius, textSize = textSize)
-    val intrinsicSize = rememberIntrinsicSize(text = text, paint = paint)
-    Canvas(
-        modifier = Modifier
-            .size(intrinsicSize)
-            .then(modifier),
-    ) {
-        drawIntoCanvas {
-            val baseline = size.height - paint.fontMetrics.descent
-            onBaseline?.invoke(baseline)
-            it.nativeCanvas.drawText(
-                text,
-                0F,
-                baseline,
-                paint,
-            )
-        }
-    }
+    val density = LocalDensity.current
+    NeonText(
+        state = rememberNeonTextState(text = text, textSize = textSize) {
+            density.run { shadowRadius.toPx() }
+        },
+        modifier = modifier,
+    )
 }
 
 @Composable
-private fun rememberPaint(shadowRadius: Dp, textSize: TextUnit): NativePaint {
-    val density = LocalDensity.current
-    return createNeonPaint(density = density, shadowRadius = shadowRadius).asFrameworkPaint().apply {
+fun NeonText(
+    state: NeonTextState,
+    modifier: Modifier = Modifier,
+) {
+    val measurePolicy by derivedStateOf {
+        MeasurePolicy { _, _ -> layout(state.size.width, state.size.height) {} }
+    }
+    Layout(
+        content = {},
+        modifier = Modifier.drawWithCache {
+            onDrawBehind {
+                drawIntoCanvas {
+                    it.nativeCanvas.drawText(
+                        state.text,
+                        0F,
+                        state.baseline,
+                        state.paint,
+                    )
+                }
+            }
+        }.then(modifier),
+        measurePolicy = measurePolicy,
+    )
+}
+
+@Stable
+class NeonTextState(
+    initialText: String,
+    initialTextSize: Float,
+    private val shadowRadius: () -> Float,
+) {
+
+    var text by mutableStateOf(initialText)
+
+    var textSize by mutableStateOf(initialTextSize)
+
+    private val basePaint = ComposePaint().asFrameworkPaint().setupPaint()
+    private val paintWithSize by derivedStateOf {
+        NativePaint(basePaint).apply { textSize = this@NeonTextState.textSize }
+    }
+    val paint by derivedStateOf {
+        NativePaint(paintWithSize).setupNeonPaint(shadowRadius())
+    }
+
+    val size by derivedStateOf {
+        val textWidth = paintWithSize.measureText(text)
+        val textHeight = paintWithSize.fontMetrics.run { bottom - top + leading }
+        IntSize(textWidth.toInt(), textHeight.toInt())
+    }
+
+    val baseline by derivedStateOf { size.height - paintWithSize.fontMetrics.descent }
+
+    private fun NativePaint.setupPaint(): NativePaint = apply {
         isAntiAlias = true
         isSubpixelText = true
-        this.textSize = density.run { textSize.toPx() }
         strokeWidth = 6F
         strokeCap = Paint.Cap.BUTT
         strokeJoin = Paint.Join.BEVEL
@@ -65,11 +103,19 @@ private fun rememberPaint(shadowRadius: Dp, textSize: TextUnit): NativePaint {
 }
 
 @Composable
-private fun rememberIntrinsicSize(text: String, paint: NativePaint): DpSize {
+fun rememberNeonTextState(
+    text: String,
+    textSize: TextUnit,
+    shadowRadius: () -> Float,
+): NeonTextState {
     val density = LocalDensity.current
-    val textWidth = paint.measureText(text)
-    val textHeight =  paint.fontMetrics.run { bottom - top + leading }
-    return density.run { Size(textWidth, textHeight).toDpSize() }
+    return remember(text, textSize) {
+        NeonTextState(
+            initialText = text,
+            initialTextSize = density.run { textSize.toPx() },
+            shadowRadius = shadowRadius,
+        )
+    }
 }
 
 @Composable

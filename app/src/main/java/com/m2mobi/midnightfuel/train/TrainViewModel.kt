@@ -1,10 +1,13 @@
 package com.m2mobi.midnightfuel.train
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.m2mobi.midnightfuel.train.model.TrainEvents
+import com.m2mobi.midnightfuel.train.model.TrainEvents.ShowSnackBar
 import com.m2mobi.midnightfuel.train.model.TrainingUIModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 
 class TrainViewModel : ViewModel() {
 
@@ -16,6 +19,9 @@ class TrainViewModel : ViewModel() {
 
     val year = MutableStateFlow("2022").asStateFlow()
 
+    private val _events: MutableSharedFlow<TrainEvents> = MutableSharedFlow()
+    val events = _events.asSharedFlow()
+
     fun onFavorite(training: TrainingUIModel) {
         _trainings.value = trainings.value.map {
             if (it.id == training.id) it.copy(isFavorite = !training.isFavorite) else it
@@ -23,7 +29,9 @@ class TrainViewModel : ViewModel() {
     }
 
     fun onTraining(training: TrainingUIModel) {
-        // Do things
+        viewModelScope.launch(Dispatchers.IO) {
+            _events.emit(ShowSnackBar("Selected: ${training.title}"))
+        }
     }
 
     private fun fetchTrainings() {

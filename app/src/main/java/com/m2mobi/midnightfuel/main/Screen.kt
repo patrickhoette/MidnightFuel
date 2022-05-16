@@ -6,5 +6,5 @@ import androidx.compose.ui.unit.Dp
 interface Screen {
 
     @Composable
-    operator fun invoke(bottomBarPadding: Dp)
+    operator fun invoke(bottombarInset: () -> Dp)
 }

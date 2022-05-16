@@ -8,11 +8,15 @@ import androidx.compose.runtime.Composable
 @SuppressLint("ConflictingOnColor")
 private val Palette = lightColors(
     primary = PrimaryColor,
-    primaryVariant = PrimaryColor,
+    primaryVariant = PrimaryColorVariant,
+    onPrimary = ContentColor,
     secondary = AccentColor,
+    secondaryVariant = AccentColorVariant,
+    onSecondary = ContentColor,
     background = PrimaryColor,
+    onBackground = ContentColor,
     surface = SurfaceColor,
-    onBackground = TextPrimaryColor,
+    onSurface = ContentColor,
 )
 
 @Composable

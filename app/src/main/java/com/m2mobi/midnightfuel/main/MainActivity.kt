@@ -3,12 +3,9 @@ package com.m2mobi.midnightfuel.main
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.Indication
-import androidx.compose.foundation.IndicationInstance
-import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -17,7 +14,6 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Star
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,15 +25,16 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.m2mobi.midnightfuel.main.model.BottomBarInsetState
+import com.m2mobi.midnightfuel.main.model.rememberBottomBarInsetState
+import com.m2mobi.midnightfuel.neon.NeonIndication
+import com.m2mobi.midnightfuel.neon.appendNeonText
 import com.m2mobi.midnightfuel.theme.*
 import com.m2mobi.midnightfuel.train.TrainScreen
-import com.m2mobi.midnightfuel.neon.appendNeonText
-import com.m2mobi.midnightfuel.neon.neon
 
 class MainActivity : ComponentActivity() {
 
@@ -59,43 +56,32 @@ class MainActivity : ComponentActivity() {
         }
 
         MidnightFuelTheme {
-            val localDensity = LocalDensity.current
-            var bottomBarHeight by remember { mutableStateOf(0.dp) }
-            var fabHeight by remember { mutableStateOf(0.dp) }
-            val bottomInset = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
-            val bottomBarPadding = 16.dp + bottomInset
+            val bottomBarInsetState = rememberBottomBarInsetState()
             Scaffold(
                 modifier = Modifier.fillMaxSize(),
-                bottomBar = {
-                    BottomBar(bottomBarPadding) {
-                        bottomBarHeight = localDensity.run { it.toDp() }
-                    }
-                },
-                floatingActionButton = {
-                    Fab {
-                        fabHeight = localDensity.run { it.toDp() }
-                    }
-                },
+                bottomBar = { BottomBar(bottomBarInsetState) },
+                floatingActionButton = { Fab(bottomBarInsetState) },
                 floatingActionButtonPosition = FabPosition.Center,
                 isFloatingActionButtonDocked = true,
                 backgroundColor = PrimaryColor,
             ) {
-                screen(bottomBarHeight + bottomBarPadding + fabHeight / 2)
+                screen { bottomBarInsetState.bottomInset }
             }
         }
     }
 
     @Composable
     private fun BottomBar(
-        bottomPadding: Dp,
-        onHeight: (Int) -> Unit,
+        bottomBarInsetState: BottomBarInsetState,
     ) {
+        val density = LocalDensity.current
         Surface(
             modifier = Modifier
+                .navigationBarsPadding()
                 .padding(horizontal = 16.dp)
-                .padding(bottom = bottomPadding)
+                .padding(bottom = 16.dp)
                 .onGloballyPositioned {
-                    onHeight(it.size.height)
+                    bottomBarInsetState.bottomBarHeight = density.run { it.size.height.toDp() }
                 },
             color = HighSurfaceColor,
             elevation = 0.dp,
@@ -153,9 +139,12 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    private fun Fab(onHeight: (Int) -> Unit) {
+    private fun Fab(bottomBarInsetState: BottomBarInsetState) {
+        val density = LocalDensity.current
         CustomFloatingActionButton(
-            modifier = Modifier.onGloballyPositioned { onHeight(it.size.height) },
+            modifier = Modifier.onGloballyPositioned {
+                bottomBarInsetState.fabHeight = density.run { it.size.height.toDp() }
+            },
             shape = Shapes.medium,
             onClick = { /* do all the things */ },
         ) {
@@ -174,10 +163,8 @@ class MainActivity : ComponentActivity() {
         contentColor: Color = contentColorFor(backgroundColor),
         content: @Composable () -> Unit
     ) {
-        var shadowRadius by remember { mutableStateOf(10.dp) }
-        val ripple = rememberRipple()
         Surface(
-            modifier = modifier.neon(radius = RadiusSmall, shadowRadius = shadowRadius),
+            modifier = modifier,
             shape = shape,
             color = AccentColor,
             contentColor = contentColor,
@@ -185,9 +172,7 @@ class MainActivity : ComponentActivity() {
             onClick = onClick,
             role = Role.Button,
             interactionSource = interactionSource,
-            indication = remember {
-                NeonIndication(10.dp, 15.dp, ripple) { shadowRadius = it }
-            },
+            indication = remember { NeonIndication(10.dp, 15.dp, AccentColor, (shape as CornerBasedShape).topStart) },
         ) {
             CompositionLocalProvider(LocalContentAlpha provides contentColor.alpha) {
                 ProvideTextStyle(MaterialTheme.typography.button) {
@@ -197,32 +182,6 @@ class MainActivity : ComponentActivity() {
                     ) { content() }
                 }
             }
-        }
-    }
-
-    private class NeonIndication(
-        private val unpressedRadius: Dp,
-        private val pressedRadius: Dp,
-        private val ripple: Indication,
-        private val onRadius: suspend (Dp) -> Unit,
-    ) : Indication {
-
-        @Composable
-        override fun rememberUpdatedInstance(interactionSource: InteractionSource): IndicationInstance {
-            val instance = ripple.rememberUpdatedInstance(interactionSource)
-            LaunchedEffect(instance, interactionSource) {
-                interactionSource.interactions.collect {
-                    when (it) {
-                        is PressInteraction.Press -> {
-                            onRadius(pressedRadius)
-                        }
-                        else -> {
-                            onRadius(unpressedRadius)
-                        }
-                    }
-                }
-            }
-            return instance
         }
     }
 }

@@ -10,7 +10,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.NativePaint
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
@@ -22,47 +21,34 @@ import androidx.compose.ui.unit.dp
 import com.m2mobi.midnightfuel.theme.*
 
 internal val DefaultShadowRadius = 10.dp
+internal fun Modifier.neon(
+    cornerRadius: () -> Dp = { 0.dp },
+    shadowRadius: () -> Dp = { DefaultShadowRadius },
+): Modifier = drawBehind { drawNeon(cornerRadius, shadowRadius) }
 
-internal fun Modifier.neon(radius: Dp = 0.dp, shadowRadius: Dp = DefaultShadowRadius): Modifier = drawBehind {
-    drawNeon(radius, shadowRadius)
-}
-
-internal fun DrawScope.drawNeon(radius: Dp = 0.dp, shadowRadius: Dp = DefaultShadowRadius) = drawIntoCanvas {
+internal fun DrawScope.drawNeon(
+    radius: () -> Dp = { 0.dp },
+    shadowRadius: () -> Dp = { DefaultShadowRadius },
+) = drawIntoCanvas {
     it.drawRoundRect(
         0F,
         0F,
         size.width,
         size.height,
-        radius.toPx(),
-        radius.toPx(),
-        createNeonPaint(this, shadowRadius),
+        radius().toPx(),
+        radius().toPx(),
+        createNeonPaint(this, shadowRadius()),
     )
 }
 
-internal fun createNeonPaint(density: Density, shadowRadius: Dp = DefaultShadowRadius): Paint = Paint().also {
+private fun createNeonPaint(density: Density, shadowRadius: Dp = DefaultShadowRadius): Paint = Paint().also {
     val radiusPx = density.run { shadowRadius.toPx() }
-    it.asFrameworkPaint().setupNeonPaint(radiusPx)
-}
-
-internal fun NativePaint.setupNeonPaint(shadowRadiusPx: Float) {
-    setShadowLayer(
-        shadowRadiusPx,
-        0F,
-        0F,
-        AccentColor.toArgb(),
-    )
-    color = Color.Transparent.toArgb()
+    it.asFrameworkPaint().setupNeonPaint(radiusPx).apply { color = Color.Transparent.toArgb() }
 }
 
 @Preview
 @Composable
 fun NeonSquarePreview() {
-    NeonSquare(RadiusNone)
-}
-
-@Preview
-@Composable
-fun LargeNeonSquarePreview() {
     NeonSquare(RadiusNone)
 }
 
@@ -74,19 +60,7 @@ fun NeonSquareRoundedSmallPreview() {
 
 @Preview
 @Composable
-fun LargeNeonSquareRoundedSmallPreview() {
-    NeonSquare(RadiusSmall)
-}
-
-@Preview
-@Composable
 fun NeonSquareRoundedMediumPreview() {
-    NeonSquare(RadiusMedium)
-}
-
-@Preview
-@Composable
-fun LargeNeonSquareRoundedMediumPreview() {
     NeonSquare(RadiusMedium)
 }
 
@@ -96,24 +70,18 @@ fun NeonSquareRoundedLargePreview() {
     NeonSquare(RadiusLarge)
 }
 
-@Preview
-@Composable
-fun LargeNeonSquareRoundedLargePreview() {
-    NeonSquare(RadiusLarge)
-}
-
 @Composable
 fun NeonSquare(cornerRadius: Dp) {
     Box(
         modifier = Modifier
-            .size(150.dp, 150.dp)
+            .size(150.dp)
             .background(color = PrimaryColor),
         contentAlignment = Alignment.Center,
     ) {
         Surface(
             modifier = Modifier
-                .size(width = 100.dp, height = 100.dp)
-                .neon(cornerRadius),
+                .size(100.dp)
+                .neon(cornerRadius = { cornerRadius }),
             color = AccentColor,
             shape = RoundedCornerShape(cornerRadius),
         ) {}
@@ -149,7 +117,7 @@ fun NeonLine(cornerRadius: Dp) {
         Surface(
             modifier = Modifier
                 .size(width = 100.dp, height = 20.dp)
-                .neon(cornerRadius),
+                .neon(cornerRadius = { cornerRadius }),
             color = AccentColor,
             shape = RoundedCornerShape(cornerRadius),
         ) {}

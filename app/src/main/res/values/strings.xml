@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">Midnight Fuel</string>
+    <string name="screen_home">Home</string>
+    <string name="screen_train">Train</string>
+    <string name="screen_goals">Goals</string>
+    <string name="screen_profile">Profile</string>
+    <string name="physical">Physical</string>
+    <string name="lets_get">Let\'s get</string>
+    <string name="marathon">Marathon %s</string>
+    <string name="trainings">%d trainings</string>
 </resources>
