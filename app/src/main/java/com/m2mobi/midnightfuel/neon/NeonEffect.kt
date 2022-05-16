@@ -41,7 +41,7 @@ internal fun DrawScope.drawNeon(
     )
 }
 
-private fun createNeonPaint(density: Density, shadowRadius: Dp = DefaultShadowRadius): Paint = Paint().also {
+fun createNeonPaint(density: Density, shadowRadius: Dp = DefaultShadowRadius): Paint = Paint().also {
     val radiusPx = density.run { shadowRadius.toPx() }
     it.asFrameworkPaint().setupNeonPaint(radiusPx).apply { color = Color.Transparent.toArgb() }
 }

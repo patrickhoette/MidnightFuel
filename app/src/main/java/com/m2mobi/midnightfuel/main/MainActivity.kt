@@ -3,9 +3,12 @@ package com.m2mobi.midnightfuel.main
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Indication
+import androidx.compose.foundation.IndicationInstance
+import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -14,6 +17,7 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,14 +29,15 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.m2mobi.midnightfuel.main.model.BottomBarInsetState
 import com.m2mobi.midnightfuel.main.model.rememberBottomBarInsetState
-import com.m2mobi.midnightfuel.neon.NeonIndication
 import com.m2mobi.midnightfuel.neon.appendNeonText
+import com.m2mobi.midnightfuel.neon.neon
 import com.m2mobi.midnightfuel.theme.*
 import com.m2mobi.midnightfuel.train.TrainScreen
 
@@ -163,8 +168,10 @@ class MainActivity : ComponentActivity() {
         contentColor: Color = contentColorFor(backgroundColor),
         content: @Composable () -> Unit
     ) {
+        var shadowRadius by remember { mutableStateOf(10.dp) }
+        val ripple = rememberRipple()
         Surface(
-            modifier = modifier,
+            modifier = modifier.neon(cornerRadius = { RadiusSmall }, shadowRadius = { shadowRadius }),
             shape = shape,
             color = AccentColor,
             contentColor = contentColor,
@@ -172,7 +179,9 @@ class MainActivity : ComponentActivity() {
             onClick = onClick,
             role = Role.Button,
             interactionSource = interactionSource,
-            indication = remember { NeonIndication(10.dp, 15.dp, AccentColor, (shape as CornerBasedShape).topStart) },
+            indication = remember {
+                NeonIndication(10.dp, 15.dp, ripple) { shadowRadius = it }
+            },
         ) {
             CompositionLocalProvider(LocalContentAlpha provides contentColor.alpha) {
                 ProvideTextStyle(MaterialTheme.typography.button) {
@@ -183,5 +192,33 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+
+    }
+
+    private class NeonIndication(
+        private val unpressedRadius: Dp,
+        private val pressedRadius: Dp,
+        private val ripple: Indication,
+        private val onRadius: suspend (Dp) -> Unit,
+    ) : Indication {
+
+        @Composable
+        override fun rememberUpdatedInstance(interactionSource: InteractionSource): IndicationInstance {
+            val instance = ripple.rememberUpdatedInstance(interactionSource)
+            LaunchedEffect(instance, interactionSource) {
+                interactionSource.interactions.collect {
+                    when (it) {
+                        is PressInteraction.Press -> {
+                            onRadius(pressedRadius)
+                        }
+                        else -> {
+                            onRadius(unpressedRadius)
+                        }
+                    }
+                }
+            }
+            return instance
+        }
     }
 }
+
