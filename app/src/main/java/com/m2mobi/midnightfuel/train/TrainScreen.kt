@@ -27,14 +27,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.m2mobi.midnightfuel.R
-import com.m2mobi.midnightfuel.extension.collectAsEffectWhenStarted
+import com.m2mobi.midnightfuel.extension.retrieveAsEffect
 import com.m2mobi.midnightfuel.main.Screen
 import com.m2mobi.midnightfuel.neon.NeonText
 import com.m2mobi.midnightfuel.neon.NeonTextState
 import com.m2mobi.midnightfuel.neon.rememberNeonGlow
 import com.m2mobi.midnightfuel.neon.rememberNeonTextState
 import com.m2mobi.midnightfuel.theme.*
-import com.m2mobi.midnightfuel.train.model.TrainEvents
+import com.m2mobi.midnightfuel.train.model.TrainEvents.ShowSnackBar
 import com.m2mobi.midnightfuel.train.model.TrainingUIModel
 
 class TrainScreen : Screen {
@@ -47,9 +47,9 @@ class TrainScreen : Screen {
 
         val snackbarHostState = remember { SnackbarHostState() }
 
-        viewModel.events.collectAsEffectWhenStarted {
+        viewModel.events.retrieveAsEffect {
             when (it) {
-                is TrainEvents.ShowSnackBar -> snackbarHostState.showSnackbar(it.message)
+                is ShowSnackBar -> snackbarHostState.showSnackbar(it.message)
             }
         }
 
@@ -135,7 +135,9 @@ private fun Header(
         density.run { (state.size.height - state.baseline - letsGetHeight + letsGetBaseline).toDp() }
     }
     Row(
-        modifier = Modifier.fillMaxWidth().padding(top = 100.dp, start = 16.dp, bottom = 16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 100.dp, start = 16.dp, bottom = 16.dp),
         verticalAlignment = Alignment.Bottom,
     ) {
         Column {

@@ -6,5 +6,5 @@ import androidx.compose.ui.unit.Dp
 interface Screen {
 
     @Composable
-    operator fun invoke(bottombarInset: () -> Dp)
+    operator fun invoke(bottomBarInset: () -> Dp)
 }
