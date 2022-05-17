@@ -9,6 +9,7 @@ import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.WindowInsetsSides.Companion.Bottom
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -80,13 +81,14 @@ class MainActivity : ComponentActivity() {
         bottomBarInsetState: BottomBarInsetState,
     ) {
         val density = LocalDensity.current
+        val bottomInset = WindowInsets.navigationBars.only(Bottom).asPaddingValues().calculateBottomPadding()
+        val bottomPadding = 16.dp + bottomInset
         Surface(
             modifier = Modifier
-                .navigationBarsPadding()
                 .padding(horizontal = 16.dp)
-                .padding(bottom = 16.dp)
+                .padding(bottom = bottomPadding)
                 .onGloballyPositioned {
-                    bottomBarInsetState.bottomBarHeight = density.run { it.size.height.toDp() }
+                    bottomBarInsetState.bottomBarHeight = density.run { it.size.height.toDp() } + bottomPadding
                 },
             color = HighSurfaceColor,
             elevation = 0.dp,
